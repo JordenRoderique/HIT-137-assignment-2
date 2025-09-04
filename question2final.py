@@ -100,12 +100,12 @@ combined_data["Deviation"] = extremes_data.std(axis=1) #deviate each station's t
 
 max_station_devs = combined_data.groupby("STATION_NAME")["Deviation"].idxmax() #find the index of the maximum deviation for each station
 station_max_dev = combined_data.loc[max_station_devs] #get the full rows for those indices and there for the stations
-dev_large = station_max_dev.sort_values(by="Deviation", ascending =True).head(5) #get the top 5 largest deviations
+dev_large = station_max_dev.sort_values(by="Deviation", ascending =False).head(5) #get the top 5 largest deviations
 dev_large["Deviation"] = dev_large["Deviation"].apply(lambda x: f"{x:.2f}°C") #apply round to 2 decimal places and add °C
 
 min_station_devs = combined_data.groupby("STATION_NAME")["Deviation"].idxmin() #find the index of the minimum deviation for each station
 station_min_dev = combined_data.loc[min_station_devs] #get the full rows for those indices and there for the stations
-dev_small = station_min_dev.sort_values(by="Deviation", ascending =False).head(5) #get the top 5 smallest deviations
+dev_small = station_min_dev.sort_values(by="Deviation", ascending =True).head(5) #get the top 5 smallest deviations
 dev_small["Deviation"] = dev_small["Deviation"].apply(lambda x: f"{x:.2f}°C") #apply round to 2 decimal places and add °C
 
 with open(r"C:\Users\Gabriel\Desktop\Assignment 2\temperature_deviations.txt", "w") as f:
