@@ -33,7 +33,7 @@ def write_seasonal_averages(averages, filepath):               # Write seasonal 
 
 # ------------------------- Temperature extremes -------------------------
 def temperature_extremes(df):
-    months = df.columns.drop("STATION_NAME")
+    months = df.columns.drop(["STATION_NAME", "LAT", "LON", "STN_ID"])
     max_temp = df[months].max(axis=1).max()                                     # Find the maximum temperature in the dataframe
     min_temp = df[months].min(axis=1).min()                                     # Find the minimum temperature in the dataframe                                                       
     max_idx = df[months].max(axis=1).idxmax()                                   # Find the relevant index of the maximum temperature
@@ -45,23 +45,26 @@ def temperature_extremes(df):
     return max_temp, min_temp, max_loc, min_loc
 
 # ------------------------- Top/Bottom Temperature Ranges -------------------------
-def top_bottom_ranges(df, months, n=5):
+def top_bottom_ranges(df, months):
     df["Temp Range"] = df[months].max(axis=1) - df[months].min(axis=1)              # Calculate temperature range for each station
     max_idx = df.groupby("STATION_NAME")["Temp Range"].idxmax()                     # Get index of max range per station
     min_idx = df.groupby("STATION_NAME")["Temp Range"].idxmin()                     # Get index of min range per station
-    max_rows = df.loc[max_idx].sort_values("Temp Range", ascending=False).head(n)   # Get top n rows with largest ranges
-    min_rows = df.loc[min_idx].sort_values("Temp Range", ascending=True).head(n)    # Get top n rows with smallest ranges
+    max_rows = df.loc[max_idx].sort_values("Temp Range", ascending=False).head(5)   # Get top 5 rows with largest ranges
+    min_rows = df.loc[min_idx].sort_values("Temp Range", ascending=True).head(5)    # Get top 5 rows with smallest ranges
     max_rows["Temp Range"] = max_rows["Temp Range"].apply(lambda x: f"{x:.2f}°C")   # Format ranges
     min_rows["Temp Range"] = min_rows["Temp Range"].apply(lambda x: f"{x:.2f}°C")
     return max_rows, min_rows
 
 # ------------------------- Top/Bottom Temperature Deviations -------------------------
-def top_bottom_deviations(df, months, n=5):         
-    df["Deviation"] = df[months].std(axis=1)                                         # Calculate standard deviation for each station
+def top_bottom_deviations(df, months):    
+    
+    month_data = df[months].copy()
+    df = df.copy()                                                                   # Work on a copy to avoid modifying original dataframe (not nessecary- used for Trouble shooting) 
+    df["Deviation"] = month_data.std(axis=1)                                         # Calculate standard deviation for each station
     max_idx = df.groupby("STATION_NAME")["Deviation"].idxmax()                       # Get index of max deviation per station
     min_idx = df.groupby("STATION_NAME")["Deviation"].idxmin()                       # Get index of min deviation per station
-    max_rows = df.loc[max_idx].sort_values("Deviation", ascending=False).head(n)     # Get top n rows with largest deviations
-    min_rows = df.loc[min_idx].sort_values("Deviation", ascending=True).head(n)      # Get top n rows with smallest deviations
+    max_rows = df.loc[max_idx].sort_values("Deviation", ascending=False).head(5)     # Get top 5 rows with largest deviations
+    min_rows = df.loc[min_idx].sort_values("Deviation", ascending=True).head(5)      # Get top 5 rows with smallest deviations
     max_rows["Deviation"] = max_rows["Deviation"].apply(lambda x: f"{x:.2f}°C")      # Format deviations
     min_rows["Deviation"] = min_rows["Deviation"].apply(lambda x: f"{x:.2f}°C")
     return max_rows, min_rows
@@ -74,23 +77,23 @@ def write_top_bottom_table(max_rows, min_rows, filepath, column_name):          
         print(f"\nTop 5 smallest {column_name}:", file=f)
         print(min_rows[["STATION_NAME", column_name]].to_string(index=False), file=f)
 
-# ------------------------- Example usage -------------------------          #COPY FILE PATH AS DESTINATION AND PASTE IN SAME FORMAT IE: "C:/Users/Name/Folder"
+# ------------------------- Example usage -------------------------
 if __name__ == "__main__":
     # --- User-defined paths ---
     folderpath = input("Enter folder path containing CSV files: ")             #Define folder path for input files
     folderpath = folderpath.strip().strip('"').strip("'")                      # Clean up input path
-#COPY FILE PATH AS DESTINATION AND PASTE IN SAME FORMAT IE: "C:/Users/Name/Folder"
+
     output_folder = input("Enter folder path to save output files: ")          #Define folder path for output files
     output_folder = output_folder.strip().strip('"').strip("'")                # Clean up input path
 
     os.makedirs(output_folder, exist_ok=True)                                  # Create output folder if it doesn't exist
 
     # --- Read data ---
-    data = read_csv_folder(folderpath)  
+    data = read_csv_folder(folderpath) 
 
     # --- Seasonal averages ---
     averages = seasonal_averages(data)
-    write_seasonal_averages(averages, os.path.join(output_folder, "seasonal_average2.txt"))
+    write_seasonal_averages(averages, os.path.join(output_folder, "seasonal_average2.txt"))  # Write seasonal averages to file
 
     # --- Temperature extremes ---
     temperature_extremes(data)
@@ -106,3 +109,4 @@ if __name__ == "__main__":
     # --- Top/Bottom Deviations ---
     dev_max, dev_min = top_bottom_deviations(data, months)
     write_top_bottom_table(dev_max, dev_min, os.path.join(output_folder, "temperature_deviations.txt"), "Deviation")
+
